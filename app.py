@@ -1,81 +1,73 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. FULL CLEAN LOOK (No Platform Branding) ---
-st.set_page_config(page_title="Mihir AI Pro", layout="centered")
+# --- 1. SETTINGS & CLEAN LOOK ---
+st.set_page_config(page_title="Mihir AI", layout="centered")
 
 st.markdown("""
     <style>
-    /* Sab kuch hide karo */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    #MainMenu, footer, header {visibility: hidden;}
     .stApp {background-color: #0E1117; color: white;}
-    
-    /* Mihir AI Title Styling */
-    .app-title {
-        text-align: center; 
-        color: #4A90E2; 
-        font-size: 40px; 
-        font-weight: bold;
-        margin-top: -50px;
-    }
-    
-    /* Powered by Branding */
-    .footer-branding {
-        text-align: center;
-        font-size: 14px;
-        margin-top: 20px;
-        margin-bottom: 10px;
-    }
+    .app-title {text-align: center; color: #4A90E2; font-size: 35px; font-weight: bold; margin-top: -60px;}
+    .footer-text {text-align: center; font-size: 15px; margin-bottom: 5px; color: #888;}
+    /* File uploader styling to look like a plus button */
+    .stFileUploader {margin-top: -20px;}
     </style>
     """, unsafe_allow_html=True)
 
-# 1. Sabse upar Mihir AI
+# Sabse upar Mihir AI
 st.markdown('<div class="app-title">Mihir AI</div>', unsafe_allow_html=True)
 
 # API Setup
 genai.configure(api_key="AIzaSyCPFQf0hfAN6xHN-sRnU00UiSc1nDVsn2I")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "photo_count" not in st.session_state:
-    st.session_state.photo_count = 0
+# Session for chat and limits
+if "messages" not in st.session_state: st.session_state.messages = []
+if "p_limit" not in st.session_state: st.session_state.p_limit = 0
 
-# --- 2. ADS & ATTACHMENT ---
-uploaded_file = st.file_uploader("📎 Kuch bhi attach karein", type=['png', 'jpg', 'jpeg', 'pdf'])
+# --- 2. UNIVERSAL ATTACH (+) BUTTON ---
+uploaded_file = st.file_uploader("📎 Attach (Photo/Doc) for Universal Solution", type=['png', 'jpg', 'jpeg', 'pdf'])
 
-# 4 BOXES
+# 4 PREMIUM BOXES (Sirf nayi chat par)
 if len(st.session_state.messages) == 0:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("☸️ Kundali Reading"): st.session_state.temp = "Analyze my Kundali"
-        if st.button("🧠 Solve Problem"): st.session_state.temp = "Solve this problem"
+        if st.button("🧠 Problem Solver"): st.session_state.temp = "Solve this problem"
     with col2:
         if st.button("📚 Study Help"): st.session_state.temp = "Help me with studies"
         if st.button("✨ Horoscope"): st.session_state.temp = "Tell my horoscope"
 
-# Chat History
+# Display Messages
 for m in st.session_state.messages:
     with st.chat_message(m["role"]): st.markdown(m["content"])
 
-# --- 3. POWERED BY BRANDING (Input bar se pehle) ---
-st.markdown('<div class="footer-branding"><i><b>Powered by developer Mihir</b></i></div>', unsafe_allow_html=True)
+# --- 3. BRANDING & INPUT ---
+st.markdown('<div class="footer-text"><i><b>Powered by developer Mihir</b></i></div>', unsafe_allow_html=True)
 
-# Input Bar
-prompt = st.chat_input("Ask Mihir AI...")
+prompt = st.chat_input("Ask Mihir AI anything...")
 
-# Business Logic (Ads & Limits)
-if st.session_state.photo_count >= 5:
-    st.warning("⚠️ 5 photo limit reached! Watch Reward Ad to continue.")
-    # APK conversion ke baad yahan reward ad trigger hoga
+# Business Logic: 5 Photo Limit
+if st.session_state.p_limit >= 5:
+    st.error("⚠️ 5 Photo Limit Reached!")
+    st.info("📺 Watch 2 Reward Ads to unlock 5 more photos.")
+    if st.button("Unlock Now (Watch Ad)"):
+        # Yahan Reward Ad trigger hoga APK mein
+        st.session_state.p_limit = 0
+        st.success("Unlocked! You can now use 5 more photos.")
+        st.rerun()
 else:
     if "temp" in st.session_state: prompt = st.session_state.pop("temp")
-    if prompt:
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"): st.markdown(prompt)
+    if prompt or uploaded_file:
+        user_msg = prompt if prompt else "Analyze this attachment"
+        if uploaded_file: st.session_state.p_limit += 1
+        
+        st.session_state.messages.append({"role": "user", "content": user_msg})
+        with st.chat_message("user"): st.markdown(user_msg)
+        
         with st.chat_message("assistant"):
-            response = model.generate_content(prompt)
-            st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            # AI Universal Response
+            res = model.generate_content([user_msg, uploaded_file] if uploaded_file else user_msg)
+            st.markdown(res.text)
+            st.session_state.messages.append({"role": "assistant", "content": res.text})
