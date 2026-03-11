@@ -1,57 +1,46 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. PREMIUM LOOK (No Credits, No Menus) ---
-st.set_page_config(page_title="Mihir AI", page_icon="🤖", layout="centered")
+# --- CONFIG & ADS SETUP ---
+st.set_page_config(page_title="Mihir AI Pro", layout="centered")
 
-hide_style = """
+# Ads styling
+st.markdown("""
     <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stApp {background-color: #0E1117; color: white;}
+    #MainMenu, footer, header {visibility: hidden;}
+    .ad-box {background-color: #262730; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #4A90E2;}
     </style>
-"""
-st.markdown(hide_style, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# --- 2. API SETUP ---
+# API
 genai.configure(api_key="AIzaSyCPFQf0hfAN6xHN-sRnU00UiSc1nDVsn2I")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# --- 3. SESSION STATE ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# --- REWARD & LIMIT LOGIC ---
+if "photo_count" not in st.session_state:
+    st.session_state.photo_count = 0
 
-# --- 4. INTERFACE ---
-st.markdown("<h1 style='text-align: center; color: #4A90E2;'>Mihir AI</h1>", unsafe_allow_html=True)
+# Title
+st.markdown("<h1 style='text-align: center;'>🤖 Mihir AI Pro</h1>", unsafe_allow_html=True)
 
-# 4 BOXES (Saamne dikhne wale)
-if len(st.session_state.messages) == 0:
-    st.write("Hello! Main Mihir AI hoon. Main aapki kya madad kar sakta hoon?")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("☸️ Kundali Analysis"): st.session_state.temp_input = "Analyze my Kundali"
-        if st.button("🧠 Solve Math/Logic"): st.session_state.temp_input = "Solve this problem"
-    with col2:
-        if st.button("📚 Study Guide"): st.session_state.temp_input = "Explain this topic"
-        if st.button("✨ Daily Horoscope"): st.session_state.temp_input = "Tell my horoscope"
+# TOP BANNER AD (Placeholder)
+st.markdown(f'<div class="ad-box">💰 Banner Ad: {st.secrets.get("BANNER_ID", "ca-app-pub-3631540460014375/4130287701")}</div>', unsafe_allow_html=True)
 
-# Chat History Display
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# FILE UPLOADER (Universal Attach)
+uploaded_file = st.file_uploader("📎 Kuch bhi attach karein (Photo/Doc)", type=['png', 'jpg', 'jpeg', 'pdf'])
 
-# Input Logic
-prompt = st.chat_input("Ask Mihir AI anything...")
-if "temp_input" in st.session_state:
-    prompt = st.session_state.pop("temp_input")
-
-if prompt:
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    
-    with st.chat_message("assistant"):
-        response = model.generate_content(prompt)
-        st.markdown(response.text)
-        st.session_state.messages.append({"role": "assistant", "content": response.text})
+if st.session_state.photo_count >= 5:
+    st.warning("⚠️ Aapki 5 photos ki limit khatam ho gayi hai!")
+    if st.button("📺 Watch 2 Reward Ads to get 5 More"):
+        # Yahan Reward Ad ka logic APK conversion ke baad chalega
+        st.session_state.photo_count = 0
+        st.success("✅ Reward Added! Ab aap 5 photos aur bana sakte hain.")
+        st.rerun()
+else:
+    # --- CHAT & SOLVER LOGIC ---
+    if prompt := st.chat_input("Ask Mihir AI Universal Solver..."):
+        # Image handling
+        if uploaded_file:
+            st.session_state.photo_count += 1
+            # AI logic here...
+        st.write(f"Remaining Free Photos: {5 - st.session_state.photo_count}")
